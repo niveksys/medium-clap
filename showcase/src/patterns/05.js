@@ -276,7 +276,9 @@ const Usage = () => {
   };
 
   return (
-    <div style={{ width: '100%' }}>
+    <section
+      style={{ display: 'flex', justifyContent: 'space-around', width: '60vw' }}
+    >
       <MediumClap
         values={state}
         onClap={handleClap}
@@ -295,7 +297,7 @@ const Usage = () => {
         <MediumClap.Count className={userCustomStyles.count} />
         <MediumClap.Total className={userCustomStyles.total} />
       </MediumClap>
-    </div>
+    </section>
   );
 };
 
