@@ -136,13 +136,13 @@ const clapReducer = (state, { type, payload }) => {
   const { count, countTotal } = state;
 
   switch (type) {
-    case 'clap':
+    case useClapState.types.clap:
       return {
         isClicked: true,
         count: Math.min(count + 1, MAX_CLAP),
         countTotal: count < MAX_CLAP ? countTotal + 1 : countTotal,
       };
-    case 'reset':
+    case useClapState.types.reset:
       return payload;
     default:
       return state;
@@ -187,6 +187,12 @@ const useClapState = (initialState = INITIAL_STATE, reducer = clapReducer) => {
     reset,
     resetDep: resetRef.current,
   };
+};
+
+useClapState.reducer = clapReducer;
+useClapState.types = {
+  clap: 'clap',
+  reset: 'reset',
 };
 
 /** ====================================
@@ -279,19 +285,13 @@ const userInitialState = {
 };
 
 const Usage = () => {
-  const reducer = ({ count, countTotal }, { type, payload }) => {
-    switch (type) {
-      case 'clap':
-        return {
-          isClicked: true,
-          count: count + 1,
-          countTotal: countTotal + 1,
-        };
-      case 'reset':
-        return payload;
-      default:
-        return state;
+  const [timesClapped, setTimeClapped] = useState(0);
+  const clappedTooMuch = timesClapped >= 7;
+  const reducer = (state, action) => {
+    if (action.type === useClapState.types.clap && clappedTooMuch) {
+      return state;
     }
+    return useClapState.reducer(state, action);
   };
 
   const { clapState, getTogglerProps, getCounterProps, reset, resetDep } =
@@ -312,6 +312,7 @@ const Usage = () => {
 
   const [uploadingReset, setUpload] = useState(false);
   useEffectAfterMount(() => {
+    setTimeClapped(0);
     setUpload(true);
     const id = setTimeout(() => {
       setUpload(false);
@@ -321,6 +322,7 @@ const Usage = () => {
 
   const handleClick = () => {
     console.log('CLICKED!!!!');
+    setTimeClapped((t) => t + 1);
   };
 
   return (
@@ -350,10 +352,13 @@ const Usage = () => {
           reset
         </button>
         <pre className={userStyles.resetMsg}>
-          {JSON.stringify({ count, countTotal, isClicked })}
+          {JSON.stringify({ timesClapped, count, countTotal })}
         </pre>
         <pre className={userStyles.resetMsg}>
           {uploadingReset ? `uploading reset ${resetDep} ...` : ''}
+        </pre>
+        <pre style={{ color: 'red' }}>
+          {clappedTooMuch ? `You clapped too much. Don't be so generous!` : ''}
         </pre>
       </section>
     </div>
