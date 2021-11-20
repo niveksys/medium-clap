@@ -132,15 +132,15 @@ const callFnsInSequence =
   (...args) =>
     fns.forEach((fn) => fn && fn(...args));
 
-const reducer = (state, { type, payload }) => {
+const clapReducer = (state, { type, payload }) => {
   const { count, countTotal } = state;
 
   switch (type) {
     case 'clap':
       return {
-        count: count + 1,
-        countTotal: countTotal + 1,
         isClicked: true,
+        count: Math.min(count + 1, MAX_CLAP),
+        countTotal: count < MAX_CLAP ? countTotal + 1 : countTotal,
       };
     case 'reset':
       return payload;
@@ -149,7 +149,7 @@ const reducer = (state, { type, payload }) => {
   }
 };
 
-const useClapState = (initialState = INITIAL_STATE) => {
+const useClapState = (initialState = INITIAL_STATE, reducer = clapReducer) => {
   const initialStateRef = useRef(initialState);
   const [clapState, dispatch] = useReducer(reducer, initialStateRef.current);
   const { count } = clapState;
@@ -279,8 +279,23 @@ const userInitialState = {
 };
 
 const Usage = () => {
+  const reducer = ({ count, countTotal }, { type, payload }) => {
+    switch (type) {
+      case 'clap':
+        return {
+          isClicked: true,
+          count: count + 1,
+          countTotal: countTotal + 1,
+        };
+      case 'reset':
+        return payload;
+      default:
+        return state;
+    }
+  };
+
   const { clapState, getTogglerProps, getCounterProps, reset, resetDep } =
-    useClapState(userInitialState);
+    useClapState(userInitialState, reducer);
   const { count, countTotal, isClicked } = clapState;
 
   const [{ clapRef, clapCountRef, clapTotalRef }, setRef] = useDOMRef();
