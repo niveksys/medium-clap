@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useRef,
   useEffect,
+  useReducer,
 } from 'react';
 import mojs from 'mo-js';
 import styles from './index.css';
@@ -131,31 +132,42 @@ const callFnsInSequence =
   (...args) =>
     fns.forEach((fn) => fn && fn(...args));
 
+const reducer = (state, { type, payload }) => {
+  const { count, countTotal } = state;
+
+  switch (type) {
+    case 'clap':
+      return {
+        count: count + 1,
+        countTotal: countTotal + 1,
+        isClicked: true,
+      };
+    case 'reset':
+      return payload;
+    default:
+      return state;
+  }
+};
+
 const useClapState = (initialState = INITIAL_STATE) => {
   const initialStateRef = useRef(initialState);
-  const [clapState, setClapState] = useState(initialState);
-  const { count, countTotal } = clapState;
+  const [clapState, dispatch] = useReducer(reducer, initialStateRef.current);
+  const { count } = clapState;
 
-  const updateClapState = useCallback(() => {
-    setClapState(({ count, countTotal }) => ({
-      isClicked: true,
-      count: Math.min(count + 1, MAX_CLAP),
-      countTotal: count < MAX_CLAP ? countTotal + 1 : countTotal,
-    }));
-  }, []);
+  const handleClapClick = () => dispatch({ type: 'clap' });
 
   const resetRef = useRef(0);
   // reset only if there's a change. It's possible to check changes to other state values e.g. countTotal & isClicked
   const prevCount = usePrevious(count);
   const reset = useCallback(() => {
     if (prevCount !== count) {
-      setClapState(initialStateRef.current);
+      dispatch({ type: 'reset', payload: initialStateRef.current });
       resetRef.current++;
     }
-  }, [prevCount, count, setClapState]);
+  }, [prevCount, count]);
 
   const getTogglerProps = ({ onClick, ...otherProps }) => ({
-    onClick: callFnsInSequence(updateClapState, onClick),
+    onClick: callFnsInSequence(handleClapClick, onClick),
     'aria-pressed': clapState.isClicked,
     ...otherProps,
   });
